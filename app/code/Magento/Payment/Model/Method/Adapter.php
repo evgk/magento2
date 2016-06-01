@@ -507,12 +507,13 @@ class Adapter implements MethodInterface
             return null;
         }
 
+        $payment = $arguments['payment'];
         if (isset($arguments['payment'])) {
             $arguments['payment'] = $this->paymentDataObjectFactory->create($arguments['payment']);
         }
 
         if ($this->commandExecutor !== null) {
-            return $this->commandExecutor->executeByCode($commandCode, $arguments);
+            return $this->commandExecutor->executeByCode($commandCode, $payment, $arguments);
         }
 
         if ($this->commandPool === null) {
