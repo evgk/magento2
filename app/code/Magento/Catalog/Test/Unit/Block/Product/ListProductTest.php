@@ -49,6 +49,11 @@ class ListProductTest extends \PHPUnit_Framework_TestCase
      * @var \Magento\Framework\Url\Helper\Data | \PHPUnit_Framework_MockObject_MockObject
      */
     protected $urlHelperMock;
+    
+    /**
+     * @var \Magento\Catalog\Model\ResourceModel\Category | \PHPUnit_Framework_MockObject_MockObject
+     */
+    protected $categoryCollectionMock;
 
     protected function setUp()
     {
@@ -92,6 +97,13 @@ class ListProductTest extends \PHPUnit_Framework_TestCase
             '',
             false
         );
+        $this->categoryCollectionMock = $this->getMock(
+            'Magento\Catalog\Model\ResourceModel\Category\Collection',
+            [],
+            [],
+            '',
+            false
+        );        
 
         $this->urlHelperMock = $this->getMockBuilder(\Magento\Framework\Url\Helper\Data::class)
             ->disableOriginalConstructor()->getMock();
@@ -120,26 +132,51 @@ class ListProductTest extends \PHPUnit_Framework_TestCase
         $this->productMock->expects($this->once())
             ->method('getIdentities')
             ->will($this->returnValue([$productTag]));
+        
+        $this->productMock->expects($this->once())
+            ->method('getCategoryCollection')
+            ->will($this->returnValue($this->categoryCollectionMock));
 
-        $itemsCollection = new \ReflectionProperty(
-            \Magento\Catalog\Block\Product\ListProduct::class,
-            '_productCollection'
-        );
-        $itemsCollection->setAccessible(true);
-        $itemsCollection->setValue($this->block, [$this->productMock]);
+        $this->categoryCollectionMock->expects($this->once())
+            ->method('load')
+            ->will($this->returnValue($this->categoryCollectionMock));
+
+        $this->categoryCollectionMock->expects($this->once())
+            ->method('setPage')
+            ->will($this->returnValue($this->categoryCollectionMock));
+
+        $this->categoryCollectionMock->expects($this->once())
+            ->method('count')
+            ->will($this->returnValue(1));
+
+        $this->registryMock->expects($this->any())
+            ->method('registry')
+            ->will($this->returnValue($this->productMock));
 
         $currentCategory = $this->getMock(\Magento\Catalog\Model\Category::class, [], [], '', false);
         $currentCategory->expects($this->once())
             ->method('getId')
             ->will($this->returnValue('1'));
+        
+        $this->categoryCollectionMock->expects($this->once())
+            ->method('getIterator')
+            ->will($this->returnValue([$currentCategory]));        
 
         $this->layerMock->expects($this->once())
             ->method('getCurrentCategory')
             ->will($this->returnValue($currentCategory));
+        
+        $this->layerMock->expects($this->once())
+            ->method('getProductCollection')
+            ->will($this->returnValue([$this->productMock]));
 
         $this->assertEquals(
             [$productTag, $categoryTag ],
             $this->block->getIdentities()
+        );
+        $this->assertEquals(
+            '1',
+            $this->block->getCategoryId()
         );
     }
 
